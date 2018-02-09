@@ -1,9 +1,39 @@
+/* ---------------------------------------------------------------------
+ * ClientGUI.java
+ *
+ * Author:  0xEval
+ * Project: jChat - TCP/UDP based multi-threaded chat application w/ GUI
+ * Licence: GPLv3
+ * GitHub:  https://github.com/0xEval/jChat
+ * --------------------------------------------------------------------- */
+
 package UI;
 
-import java.awt.*;
-import javax.swing.*;
+import Socket.jClientSocket;
 
-public class jClientGUI {
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+
+import javax.swing.DefaultListCellRenderer;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JPanel;
+import javax.swing.JPasswordField;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+
+public class ClientGUI {
+
+    private jClientSocket client;
 
     private JPanel      pnMainPanel;
     private JButton     btLogin;
@@ -15,16 +45,30 @@ public class jClientGUI {
     private JLabel      lbUsername;
     private JLabel      lbPassword;
 
-    private final Color BG_COLOR   = new Color(30, 33, 37);
-    private final Color BG2_COLOR  = new Color(52, 60, 65);
-    private final Color TEXT_COLOR = new Color(148,155,162);
+    private final Color BG_COLOR   = new Color(30, 33, 37);  // Primary background color (main pane)
+    private final Color BG2_COLOR  = new Color(52, 60, 65);  // Secondary " color (input fields)
+    private final Color TEXT_COLOR = new Color(148,155,162); // Text foreground color
 
-    public jClientGUI() {
-
+    public ClientGUI(jClientSocket socket) {
+        client = socket;
         initializeComponents();
-
+        initializeListeners();
     }
 
+    public void updateChatWindow(String msg) {
+        taChat.insert(msg + "\n", taChat.getText().length());
+        taChat.setCaretPosition(taChat.getText().length());
+    }
+
+    public void initializeListeners() {
+        tfMessageInput.addActionListener((ActionEvent lambda) -> {
+            client.sendMessage(tfMessageInput.getText());
+            tfMessageInput.setText("");
+            tfMessageInput.requestFocusInWindow();
+        });
+    }
+
+    // Initializes the GUI components and dispatch them on the panel.
     public void initializeComponents() {
 
         pnMainPanel = new JPanel();
@@ -174,7 +218,6 @@ public class jClientGUI {
         gbMainPanel.setConstraints( tfMessageInput, gbcMainPanel );
         pnMainPanel.add( tfMessageInput );
 
-
         pnMainPanel.setVisible(true);
         pnMainPanel.setBackground(BG_COLOR);
         JFrame chatFrame = new JFrame("jChat v0.1");
@@ -182,17 +225,12 @@ public class jClientGUI {
         chatFrame.setSize(800, 500);
         chatFrame.setVisible(true);
         Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
+        // Centers the window in the middle of the screen on runtime
         chatFrame.setLocation(
                 dim.width/2-chatFrame.getSize().width/2,
                 dim.height/2-chatFrame.getSize().height/2
         );
-
-    }
-
-    public static void main(String[] args) {
-
-        jClientGUI GUI = new jClientGUI();
-
+        tfMessageInput.requestFocusInWindow();
     }
 
 }
