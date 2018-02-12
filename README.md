@@ -4,6 +4,10 @@
 
 Implementing a TCP based chat box application in Java.
 
+## Dependencies
+
+[Java API for JSON Processing](https://javaee.github.io/jsonp/)
+
 ### Basic requirements
 
 * [] Send ASCII text
