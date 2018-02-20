@@ -20,16 +20,7 @@ import java.awt.Insets;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 
-import javax.swing.DefaultListCellRenderer;
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JList;
-import javax.swing.JPanel;
-import javax.swing.JPasswordField;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
+import javax.swing.*;
 
 public class ClientGUI {
 
@@ -39,15 +30,16 @@ public class ClientGUI {
     private JButton     btLogin;
     private JList       lsUserlist;
     private JTextArea   taChat;
+    private JScrollPane scpChat;
     private JTextField  tfUsername;
     private JTextField  tfPassword;
     private JTextField  tfMessageInput;
     private JLabel      lbUsername;
     private JLabel      lbPassword;
 
-    private final Color BG_COLOR   = new Color(30, 33, 37);  // Primary background color (main pane)
-    private final Color BG2_COLOR  = new Color(52, 60, 65);  // Secondary " color (input fields)
-    private final Color TEXT_COLOR = new Color(148,155,162); // Text foreground color
+    private final Color BG_COLOR   = new Color(30, 33, 37);   // Primary background color (main pane)
+    private final Color BG2_COLOR  = new Color(52, 60, 65);   // Secondary " color (input fields)
+    private final Color TEXT_COLOR  = new Color(148,155,162); // Text foreground color
 
     public ClientGUI(jClientSocket socket) {
         client = socket;
@@ -55,16 +47,48 @@ public class ClientGUI {
         initializeListeners();
     }
 
+    // Append a message with the given string in the Chat pane.
     public void updateChatWindow(String msg) {
         taChat.insert(msg + "\n", taChat.getText().length());
         taChat.setCaretPosition(taChat.getText().length());
     }
 
+    // Update the user list with a given String array
+    public void updateUserList(String [] list) {
+        lsUserlist.setListData(list);
+    }
+
+    // Initialize listeners on every input fields
     public void initializeListeners() {
         tfMessageInput.addActionListener((ActionEvent lambda) -> {
-            client.sendMessage(tfMessageInput.getText());
+            String input = tfMessageInput.getText();
+            // A user can send a PM by appending a message with "/w" and a username
+            if (input.startsWith("/w")) {
+                String msg  = input.substring(input.indexOf(" ", input.indexOf(" ") + 1) + 1);
+                String dest = input.split(" ")[1];
+                client.sendMessage(msg, dest);
+            } else {
+                client.sendMessage(input);
+            }
             tfMessageInput.setText("");
             tfMessageInput.requestFocusInWindow();
+        });
+
+        tfUsername.addActionListener((ActionEvent lambda) -> {
+            String username = tfUsername.getText();
+            client.login(username);
+            // Hacky way to wait for server response
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ie) { ie.printStackTrace(); }
+            if (client.isConnected()) {
+                tfUsername.setText(username);
+                tfUsername.setFont(new Font("Hack", Font.ITALIC + Font.BOLD, 14));
+                tfUsername.setEditable(false);
+                tfMessageInput.requestFocusInWindow();
+            } else {
+                updateChatWindow("Username taken. Try again.");
+            }
         });
     }
 
@@ -160,8 +184,7 @@ public class ClientGUI {
         gbMainPanel.setConstraints( btLogin, gbcMainPanel );
         pnMainPanel.add( btLogin );
 
-        String []dataUserlist = { "Chocolate", "Ice Cream", "Apple Pie" };
-        lsUserlist = new JList( dataUserlist );
+        lsUserlist = new JList( );
         lsUserlist.setFont(new Font("Hack", Font.PLAIN, 14));
         lsUserlist.setBackground(BG2_COLOR);
         lsUserlist.setForeground(TEXT_COLOR);
@@ -181,12 +204,12 @@ public class ClientGUI {
         gbMainPanel.setConstraints( scpUserlist, gbcMainPanel );
         pnMainPanel.add( scpUserlist );
 
-        taChat = new JTextArea(2,10);
+        taChat = new JTextArea(2, 10);
         taChat.setFont(new Font("Hack", Font.PLAIN, 14));
         taChat.setBackground(BG2_COLOR);
         taChat.setForeground(TEXT_COLOR);
         taChat.setEditable(false);
-        JScrollPane scpChat = new JScrollPane( taChat );
+        scpChat = new JScrollPane( taChat );
         scpChat.setBorder(null);
         gbcMainPanel.gridx = 0;
         gbcMainPanel.gridy = 1;
@@ -222,7 +245,7 @@ public class ClientGUI {
         pnMainPanel.setBackground(BG_COLOR);
         JFrame chatFrame = new JFrame("jChat v0.1");
         chatFrame.add(pnMainPanel);
-        chatFrame.setSize(800, 500);
+        chatFrame.setSize(900, 500);
         chatFrame.setVisible(true);
         Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
         // Centers the window in the middle of the screen on runtime
