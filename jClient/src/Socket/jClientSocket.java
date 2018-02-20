@@ -9,49 +9,105 @@
 
 package Socket;
 
+import Data.HeaderList;
+import Data.Message;
 import UI.ClientGUI;
 
+import java.io.*;
 import java.net.Socket;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 public class jClientSocket {
 
-    private ClientGUI      clientGUI;
-    private Socket         socket;
-    private BufferedReader reader;
-    private BufferedWriter writer;
+    private ClientGUI          clientGUI;
+    private Socket             socket;
+    private ObjectInputStream  reader;
+    private ObjectOutputStream writer;
+    private boolean            connected;
+    private String             username;
 
     public jClientSocket(String hostName, int portNumber) {
         try {
             socket = new Socket(hostName, portNumber);
-            reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+            writer = new ObjectOutputStream(socket.getOutputStream()); // Reading from the Server
+            reader = new ObjectInputStream(socket.getInputStream());   // Writing to the Server
         } catch (IOException io) {
             io.printStackTrace();
         }
+        connected = false;
         clientGUI = new ClientGUI(this);
     }
 
-    public void sendMessage(String msg) {
+    public boolean isConnected() {
+        return connected;
+    }
+
+    public void login(String str) {
+        Message msg = new Message(HeaderList.LOG, null, str);
+        username = str;
         try {
-            writer.write(msg);
-            writer.newLine();
-            writer.flush();
+            writer.writeObject(msg);
+        } catch (IOException io) { io.printStackTrace(); }
+    }
+
+    public void sendMessage(String str) {
+        Message msg = new Message(HeaderList.MSG, username, str);
+        try {
+            writer.writeObject(msg);
+        } catch (IOException io) { io.printStackTrace(); }
+    }
+
+    public void sendMessage(String str, String dest) {
+        Message msg = new Message(HeaderList.PRV, username, str, dest);
+        try {
+            writer.writeObject(msg);
         } catch (IOException io) { io.printStackTrace(); }
     }
 
     public void run() {
-        String inputLine;
+        Message msg;
         try {
-            while ((inputLine = reader.readLine()) != null) {
-                clientGUI.updateChatWindow(inputLine);
-                System.out.println("DEBUG: " + inputLine);
+
+            // Wait for server to acknowledge connection (ie. receiving LOG type message)
+            while (!connected) {
+                msg = (Message) reader.readObject();
+                if (msg.getHeader() == HeaderList.LOG) {
+                   connected = true;
+                }
             }
-        } catch(IOException io) { io.printStackTrace(); }
+
+            while ((msg = (Message) reader.readObject()) != null) {
+                System.out.println("DEBUG: Message received\n"+msg);
+                switch (msg.getHeader()) {
+                    default:
+                        break;
+                    case HeaderList.MSG: // Received a global message
+                        clientGUI.updateChatWindow(
+                                "["+msg.getTime()+"] ["+msg.getSender()+"]: "+msg.getData()
+                        );
+                        break;
+                    case HeaderList.PRV: // Received a private message
+                        if (username.equals(msg.getSender()))
+                            clientGUI.updateChatWindow(
+                                    "["+msg.getTime()+"] [To "+msg.getDest()+"]: "+msg.getData()
+                            );
+                        else if (username.equals(msg.getDest()))
+                            clientGUI.updateChatWindow(
+                                    "["+msg.getTime()+"] [From "+msg.getSender()+"]: "+msg.getData()
+                            );
+                        break;
+                    case HeaderList.UPD: // Received an updated user list as a colon separated string.
+                        clientGUI.updateUserList(msg.getData().split(":", -1));
+                        System.out.println(new ArrayList<>(Arrays.asList(msg.getData().split(":"))));
+                        break;
+                }
+                System.out.println();
+            }
+
+        }
+        catch (IOException io) { io.printStackTrace(); }
+        catch (ClassNotFoundException cnfe) { cnfe.printStackTrace(); }
     }
 
     public static void main(String[] args) {
