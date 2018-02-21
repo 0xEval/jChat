@@ -19,7 +19,6 @@
 
 package Data;
 
-import javax.crypto.SecretKey;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -28,7 +27,6 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.text.DateFormat;
 
 public class Message implements Serializable {
 
@@ -139,7 +137,6 @@ public class Message implements Serializable {
         } catch (ClassNotFoundException cnfe) {
             cnfe.printStackTrace();
         }
-
     }
 
 }

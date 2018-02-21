@@ -69,7 +69,7 @@ public class History {
     }
 
     public static void createHistory() {
-        try (FileWriter writer = new FileWriter(new File("/tmp/history.json"))) {
+        try (FileWriter writer = new FileWriter(new File("logs/history.json"))) {
             JsonObjectBuilder builder = Json.createObjectBuilder()
                     .add("message", Json.createArrayBuilder().build());
             JsonObject obj = builder.build();
@@ -81,9 +81,7 @@ public class History {
     }
 
     public static void logMessage(Message msg) {
-
-        try (FileReader reader = new FileReader("/tmp/history.json")) {
-
+        try (FileReader reader = new FileReader("logs/history.json")) {
             JsonReader jsonReader      = Json.createReader(reader);
             JsonObject jsonObject      = jsonReader.readObject();
             JsonObjectBuilder builder  = Json.createObjectBuilder();
@@ -105,7 +103,7 @@ public class History {
             builder.add("message", newValue);
             jsonObject = builder.build();
 
-            try (FileWriter writer = new FileWriter("/tmp/history.json")) {
+            try (FileWriter writer = new FileWriter("logs/history.json")) {
                 writer.write(prettyPrint(jsonObject));
             }
 
@@ -117,14 +115,12 @@ public class History {
     }
 
     public static void main(String[] args) {
-
         Message testMessage1 = new Message(HeaderList.MSG, "Billie", "Is not");
         Message testMessage2 = new Message(HeaderList.MSG, "Jean", "my lover");
 
         createHistory();
         logMessage(testMessage1);
         logMessage(testMessage2);
-
     }
 
 }
