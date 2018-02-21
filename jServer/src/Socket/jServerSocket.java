@@ -55,6 +55,13 @@ public class jServerSocket {
        msgBuffer.add(msg);
     }
 
+    public void updateClientList() {
+        for (ClientHandler c : clientList) {
+            c.updateClientList(clientList);
+            c.sendClientList();
+        }
+    }
+
     public void run() {
         System.out.println(
                 "Server started. Listening on port <" + socket.getLocalPort() + ">"
@@ -69,11 +76,12 @@ public class jServerSocket {
             @Override
             public void run() {
                 System.out.println("Logging chat history...");
-                System.out.println(msgBuffer);
-                if (!msgBuffer.isEmpty())
+                if (!msgBuffer.isEmpty()) {
+                    System.out.println(msgBuffer);
                     for (Message m : msgBuffer)
                         History.logMessage(m);
-                    msgBuffer.clear();
+                }
+                msgBuffer.clear();
             }
         }, 60, 60, TimeUnit.SECONDS);
 
@@ -85,10 +93,7 @@ public class jServerSocket {
                 ClientHandler newClient = new ClientHandler(this, client, clientList);
                 pool.execute(newClient);
                 // Send the updated list to each executor
-                for (ClientHandler c : clientList) {
-                    c.updateClientList(clientList);
-                    c.sendClientList();
-                }
+                updateClientList();
             } catch (IOException io) {
                 io.printStackTrace();
                 if (pool != null) pool.shutdown();

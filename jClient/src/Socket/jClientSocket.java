@@ -74,6 +74,10 @@ public class jClientSocket {
                 msg = (Message) reader.readObject();
                 if (msg.getHeader() == HeaderList.LOG) {
                    connected = true;
+                    clientGUI.updateChatWindow(
+                            "["+msg.getTime()+"] ["+msg.getSender()+"]: " +
+                                    "Connection successful, welcome to the chat room."
+                    );
                 }
             }
 

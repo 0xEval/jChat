@@ -51,6 +51,14 @@ public class ClientHandler implements Runnable {
         Message m = new Message(HeaderList.UPD, "SERVER", sb.toString());
         writeMessage(m);
     }
+    public String getClientListString() {
+        StringBuilder sb = new StringBuilder("");
+        for (ClientHandler c : clientList) {
+            sb.append(c.username);
+            sb.append(":");
+        }
+        return sb.toString();
+    }
 
     private void writeMessage(Message msg) {
         try {
@@ -82,17 +90,20 @@ public class ClientHandler implements Runnable {
                 msg = (Message) reader.readObject();
                 if (msg.getHeader() == HeaderList.LOG) {
                     if (checkUsernameValidity(msg.getData())) {
+                        // Authentication is approved (no duplicate username)
                         connected = true;
                         username = msg.getData();
+                        writeMessage(new Message(HeaderList.LOG, "SERVER", "OK"));
+                        // Update clientLists server-side and thread-side
                         server.getClientList().add(this);
                         clientList.add(this);
-                        sendClientList();
-                        this.writeMessage(new Message(HeaderList.LOG, "SERVER", "OK"));
-                        for (ClientHandler ch : clientList)
+                        for (ClientHandler ch : clientList) {
+                            ch.updateClientList(clientList);
+                            ch.sendClientList();
                             ch.writeMessage(new Message(HeaderList.MSG, "SERVER", "User " +
                                     username + " has joined the room."));
+                        }
                     } else {
-                        System.out.println("loginattemps++");
                         loginAttempts++;
                     }
                 }
