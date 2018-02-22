@@ -19,11 +19,6 @@
 
 package Data;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -70,7 +65,23 @@ public class Message implements Serializable {
         return data;
     }
 
-    public String getDest() { return  dest; }
+    public String getDest() {
+        return dest;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o instanceof Message) {
+            Message m = (Message) o;
+            return  m.getHeader() == getHeader() &&
+                    m.getSender().equals(getSender()) &&
+                    m.getTimestamp().equals(getTimestamp());
+        }
+        else {
+            return false;
+        }
+    }
 
     @Override
     public String toString() {
@@ -80,63 +91,46 @@ public class Message implements Serializable {
         return str.toString();
     }
 
-    public static byte[] toByteArray(Object obj) throws IOException {
-        byte[] bytes = null;
-        ByteArrayOutputStream bos = null;
-        ObjectOutputStream oos = null;
+    public void encryptMessage(byte[] key) {
         try {
-            bos = new ByteArrayOutputStream();
-            oos = new ObjectOutputStream(bos);
-            oos.writeObject(obj);
-            oos.flush();
-            bytes = bos.toByteArray();
-        } finally {
-            if (oos != null) {
-                oos.close();
-            }
-            if (bos != null) {
-                bos.close();
-            }
+            data = new String(Crypto.encrypt(key, getData().getBytes()));
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        return bytes;
     }
 
-    public static Object toObject(byte[] bytes) throws IOException, ClassNotFoundException {
-        Object obj = null;
-        ByteArrayInputStream bis = null;
-        ObjectInputStream ois = null;
+    public void decryptMessage(byte[] key) {
         try {
-            bis = new ByteArrayInputStream(bytes);
-            ois = new ObjectInputStream(bis);
-            obj = ois.readObject();
-        } finally {
-            if (bis != null) {
-                bis.close();
-            }
-            if (ois != null) {
-                ois.close();
-            }
+            data = new String(Crypto.decrypt(key, getData().getBytes()));
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        return obj;
     }
 
-    public static void main(String[] args) {
-        byte header   = HeaderList.MSG;
-        String sender = "Joe";
-        String data   = "This is not a test";
-        Message testMessage = new Message(header, sender, data);
-        System.out.println(testMessage);
+    public static void main(String[] args) throws Exception {
 
-        try {
-            byte[] byteMsg = toByteArray(testMessage);
-            System.out.println(byteMsg);
-            Message msg = (Message)toObject(byteMsg);
-            System.out.println(msg);
-        } catch (IOException io) {
-            io.printStackTrace();
-        } catch (ClassNotFoundException cnfe) {
-            cnfe.printStackTrace();
-        }
+        Message msg = new Message(HeaderList.MSG,"TestSender","SecretMessage");
+
+        System.out.println("Testing Canonical Form");
+        System.out.println(msg.toString());
+
+        byte[] key = Crypto.generateKey();
+        byte[] rawData = msg.getData().getBytes();
+        byte[] encryptedData = Crypto.encrypt(key, rawData);
+        byte[] decryptedData = Crypto.decrypt(key, encryptedData);
+
+        System.out.println("\nTesting Encryption on ByteArray");
+        System.out.println(new String(rawData));
+        System.out.println(new String(encryptedData));
+        System.out.println(new String(decryptedData));
+
+        System.out.println("\nTesting Encryption on Strings");
+        System.out.println(msg.getData());
+        msg.encryptMessage(key);
+        System.out.println(msg.getData());
+        msg.decryptMessage(key);
+        System.out.println(msg.getData());
+
     }
 
 }

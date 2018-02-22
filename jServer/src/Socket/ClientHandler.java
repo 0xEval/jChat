@@ -51,14 +51,6 @@ public class ClientHandler implements Runnable {
         Message m = new Message(HeaderList.UPD, "SERVER", sb.toString());
         writeMessage(m);
     }
-    public String getClientListString() {
-        StringBuilder sb = new StringBuilder("");
-        for (ClientHandler c : clientList) {
-            sb.append(c.username);
-            sb.append(":");
-        }
-        return sb.toString();
-    }
 
     private void writeMessage(Message msg) {
         try {
@@ -79,12 +71,10 @@ public class ClientHandler implements Runnable {
 
     @Override
     public void run() {
-
         System.out.println("\tStarting a new listener on Thread #" + Thread.currentThread().getId());
-        Message msg;
-        int loginAttempts = 0;
-
         try {
+            Message msg;
+            int loginAttempts = 0;
 
             while (!connected) {
                 msg = (Message) reader.readObject();
@@ -92,7 +82,7 @@ public class ClientHandler implements Runnable {
                     if (checkUsernameValidity(msg.getData())) {
                         // Authentication is approved (no duplicate username)
                         connected = true;
-                        username = msg.getData();
+                        username  = msg.getData();
                         writeMessage(new Message(HeaderList.LOG, "SERVER", "OK"));
                         // Update clientLists server-side and thread-side
                         server.getClientList().add(this);
@@ -107,11 +97,11 @@ public class ClientHandler implements Runnable {
                         loginAttempts++;
                     }
                 }
+
                 if (loginAttempts >= 3) {
                     server.getClientList().remove(this);
                     System.err.println("Connection reset on Thread #"+Thread.currentThread().getId());
                     Thread.currentThread().interrupt();
-                    System.exit(-1);
                 }
             }
 
@@ -122,7 +112,8 @@ public class ClientHandler implements Runnable {
                    case HeaderList.MSG:
                         for (ClientHandler ch : clientList)
                             ch.writeMessage(msg);
-                        System.out.println("\tReceived message \"" + msg.getData() + "\" from Thread #" + Thread.currentThread().getId());
+                        System.out.println("\tReceived message \"" + msg.getData() + "\" from Thread #"
+                                + Thread.currentThread().getId());
                         break;
                    case HeaderList.PRV:
                        for (ClientHandler ch : clientList)

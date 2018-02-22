@@ -52,7 +52,8 @@ public class jServerSocket {
     }
 
     public synchronized void logMessage(Message msg) {
-       msgBuffer.add(msg);
+        if (!msgBuffer.contains(msg))
+           msgBuffer.add(msg);
     }
 
     public void updateClientList() {

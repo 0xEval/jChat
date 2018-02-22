@@ -27,6 +27,11 @@ public class jClientSocket {
     private boolean            connected;
     private String             username;
 
+    // Hardcoded symmetric key used as a proof-of-work for encryption.
+    // The proper way requires to generate a symmetric key using Crypto.generateKey()
+    // that needs to be shared using public/private key pairs.
+    private byte[] key = new byte[] {'T', 'h', 'e', 'B', 'e', 's', 't', 'S', 'e', 'c', 'r','e', 't', 'K', 'e', 'y'};
+
     public jClientSocket(String hostName, int portNumber) {
         try {
             socket = new Socket(hostName, portNumber);
@@ -44,7 +49,7 @@ public class jClientSocket {
     }
 
     public void login(String str) {
-        Message msg = new Message(HeaderList.LOG, null, str);
+        Message msg = new Message(HeaderList.LOG, "NewClientSocket", str);
         username = str;
         try {
             writer.writeObject(msg);
@@ -53,6 +58,7 @@ public class jClientSocket {
 
     public void sendMessage(String str) {
         Message msg = new Message(HeaderList.MSG, username, str);
+        msg.encryptMessage(key);
         try {
             writer.writeObject(msg);
         } catch (IOException io) { io.printStackTrace(); }
@@ -60,6 +66,7 @@ public class jClientSocket {
 
     public void sendMessage(String str, String dest) {
         Message msg = new Message(HeaderList.PRV, username, str, dest);
+        msg.encryptMessage(key);
         try {
             writer.writeObject(msg);
         } catch (IOException io) { io.printStackTrace(); }
@@ -68,7 +75,6 @@ public class jClientSocket {
     public void run() {
         Message msg;
         try {
-
             // Wait for server to acknowledge connection (ie. receiving LOG type message)
             while (!connected) {
                 msg = (Message) reader.readObject();
@@ -87,11 +93,13 @@ public class jClientSocket {
                     default:
                         break;
                     case HeaderList.MSG: // Received a global message
+                        msg.decryptMessage(key);
                         clientGUI.updateChatWindow(
                                 "["+msg.getTime()+"] ["+msg.getSender()+"]: "+msg.getData()
                         );
                         break;
                     case HeaderList.PRV: // Received a private message
+                        msg.decryptMessage(key);
                         if (username.equals(msg.getSender()))
                             clientGUI.updateChatWindow(
                                     "["+msg.getTime()+"] [To "+msg.getDest()+"]: "+msg.getData()
@@ -108,7 +116,6 @@ public class jClientSocket {
                 }
                 System.out.println();
             }
-
         }
         catch (IOException io) { io.printStackTrace(); }
         catch (ClassNotFoundException cnfe) { cnfe.printStackTrace(); }

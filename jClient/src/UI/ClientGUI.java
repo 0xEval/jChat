@@ -80,14 +80,16 @@ public class ClientGUI {
             // Hacky way to wait for server response
             try {
                 Thread.sleep(100);
-            } catch (InterruptedException ie) { ie.printStackTrace(); }
-            if (client.isConnected()) {
-                tfUsername.setText(username);
-                tfUsername.setFont(new Font("Hack", Font.ITALIC + Font.BOLD, 14));
-                tfUsername.setEditable(false);
-                tfMessageInput.requestFocusInWindow();
-            } else {
-                updateChatWindow("Username taken. Try again.");
+                if (client.isConnected()) {
+                    tfUsername.setText(username);
+                    tfUsername.setFont(new Font("Hack", Font.ITALIC + Font.BOLD, 14));
+                    tfUsername.setEditable(false);
+                    tfMessageInput.requestFocusInWindow();
+                } else {
+                    updateChatWindow("Username taken. Try again.");
+                }
+            } catch (InterruptedException ie) {
+                ie.printStackTrace();
             }
         });
     }
