@@ -3,6 +3,8 @@
 ![example_screen](https://user-images.githubusercontent.com/19994887/36468997-3d5ebd1a-1718-11e8-9dd8-43757211805a.png)
 
 
+## ![Presentation](http://slides.com/slides_eval/jchat/fullscreen)
+
 ## Usage
 
 ```
@@ -23,11 +25,11 @@ $ java jClientSocket <hostName> <portNumber>
 
 * [✓] Send ASCII text
 * [~] Share file (binary)
-* [] Secure encrypted communication
+* [✓] Secure encrypted communication
 * [✓] Store chat history
 
 ### Advanced blocks
 
 * [✓] Private messages
-* [~] Authentication, Authorization
-* [] Message integrity: Hash verification
+* [✓] Authentication, Authorization
+* [✓] Message integrity: Hash verification
